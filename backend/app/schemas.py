@@ -24,6 +24,7 @@ class ModelInfo(BaseModel):
     parameters: Dict[str, Any]
     training_time: str
     metrics: Dict[str, float]
+    feature_importance: Optional[Dict[str, float]] = None
     model_path: str
 
 class TrainingRequest(BaseModel):

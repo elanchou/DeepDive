@@ -283,6 +283,141 @@ const ModelDetail = () => {
                   <Tag key={feature}>{feature}</Tag>
                 ))}
               </div>
+              
+              {model.feature_importance && Object.keys(model.feature_importance).length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <Title level={4}>特征重要性/系数</Title>
+                  <Paragraph>
+                    {model.model_type.includes('regression') && !model.model_type.includes('polynomial') ? 
+                      '系数值表示每个特征对目标值的影响程度和方向。正值表示正向影响，负值表示负向影响。' :
+                      '特征重要性表示每个特征对模型预测的相对重要程度。'}
+                  </Paragraph>
+                  
+                  <Table
+                    dataSource={Object.entries(model.feature_importance)
+                      .map(([feature, value]) => ({
+                        key: feature,
+                        feature: feature,
+                        value: parseFloat(value.toFixed(6)),
+                        absValue: Math.abs(parseFloat(value.toFixed(6)))
+                      }))
+                      .sort((a, b) => b.absValue - a.absValue)}
+                    columns={[
+                      { 
+                        title: '特征', 
+                        dataIndex: 'feature', 
+                        key: 'feature',
+                        render: text => text === '截距(Intercept)' ? 
+                          <span>{text} <Tag color="purple">截距</Tag></span> : text
+                      },
+                      { 
+                        title: '系数/重要性', 
+                        dataIndex: 'value', 
+                        key: 'value',
+                        render: value => {
+                          // 线性模型显示正负符号和颜色
+                          if (model.model_type.includes('regression') && !model.model_type.includes('polynomial')) {
+                            const color = value > 0 ? '#3f8600' : '#cf1322';
+                            const sign = value > 0 ? '+' : '';
+                            return <span style={{ color }}>{sign}{value}</span>;
+                          }
+                          return value;
+                        }
+                      },
+                      {
+                        title: '可视化',
+                        dataIndex: 'value',
+                        key: 'visualization',
+                        render: (value, record) => {
+                          // 对于线性模型，显示正负条形图
+                          if (model.model_type.includes('regression') && !model.model_type.includes('polynomial')) {
+                            const maxValue = Math.max(...Object.values(model.feature_importance)
+                              .map(v => Math.abs(parseFloat(v.toFixed(6)))));
+                            const width = `${(Math.abs(value) / maxValue) * 100}%`;
+                            const color = value > 0 ? '#3f8600' : '#cf1322';
+                            
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: value < 0 ? 'flex-end' : 'flex-start' }}>
+                                <div style={{ 
+                                  width, 
+                                  height: '20px', 
+                                  backgroundColor: color,
+                                  marginLeft: value < 0 ? 'auto' : 0,
+                                  marginRight: value < 0 ? 0 : 'auto'
+                                }}></div>
+                              </div>
+                            );
+                          }
+                          
+                          // 对于其他模型，显示普通条形图
+                          const maxValue = Math.max(...Object.values(model.feature_importance)
+                            .map(v => parseFloat(v.toFixed(6))));
+                          const width = `${(value / maxValue) * 100}%`;
+                          
+                          return (
+                            <div style={{ width: '100%' }}>
+                              <div style={{ width, height: '20px', backgroundColor: '#1890ff' }}></div>
+                            </div>
+                          );
+                        }
+                      }
+                    ]}
+                    pagination={false}
+                  />
+                  
+                  {model.model_type.includes('regression') && !model.model_type.includes('polynomial') && (
+                    <ReactECharts
+                      option={{
+                        title: {
+                          text: '特征系数',
+                          left: 'center'
+                        },
+                        tooltip: {
+                          trigger: 'axis',
+                          axisPointer: {
+                            type: 'shadow'
+                          }
+                        },
+                        grid: {
+                          left: '3%',
+                          right: '4%',
+                          bottom: '3%',
+                          containLabel: true
+                        },
+                        xAxis: {
+                          type: 'value',
+                          name: '系数值'
+                        },
+                        yAxis: {
+                          type: 'category',
+                          data: Object.entries(model.feature_importance)
+                            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                            .map(([feature]) => feature),
+                          axisLabel: {
+                            interval: 0,
+                            rotate: 30
+                          }
+                        },
+                        series: [
+                          {
+                            name: '系数',
+                            type: 'bar',
+                            data: Object.entries(model.feature_importance)
+                              .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                              .map(([_, value]) => parseFloat(value.toFixed(6))),
+                            itemStyle: {
+                              color: function(params) {
+                                return params.value > 0 ? '#3f8600' : '#cf1322';
+                              }
+                            }
+                          }
+                        ]
+                      }}
+                      style={{ height: 400, marginTop: 24 }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </TabPane>
           <TabPane
