@@ -36,7 +36,6 @@ const App = () => {
   return (
     <Layout className="layout" style={{ minHeight: '100vh' }}>
       <Header>
-        <div className="logo" />
         <Menu
           theme="dark"
           mode="horizontal"
