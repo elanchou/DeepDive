@@ -59,7 +59,7 @@ fi
 
 # 更新pip和setuptools
 echo -e "${BLUE}更新pip和setuptools...${NC}"
-pip install --upgrade pip setuptools wheel
+python -m pip install --upgrade pip setuptools wheel
 if [ $? -ne 0 ]; then
     echo -e "${RED}错误: 更新pip和setuptools失败${NC}"
     deactivate
@@ -69,11 +69,11 @@ fi
 # 安装后端依赖
 echo -e "${BLUE}安装后端依赖...${NC}"
 cd backend
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 if [ $? -ne 0 ]; then
     echo -e "${RED}错误: 安装后端依赖失败${NC}"
     echo -e "${BLUE}尝试使用--no-build-isolation选项安装...${NC}"
-    pip install --no-build-isolation -r requirements.txt
+    python -m pip install --no-build-isolation -r requirements.txt
     if [ $? -ne 0 ]; then
         echo -e "${RED}错误: 安装后端依赖仍然失败${NC}"
         deactivate
