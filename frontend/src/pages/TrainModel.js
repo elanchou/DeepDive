@@ -106,7 +106,12 @@ const TrainModel = () => {
     if (selectedModel) {
       const defaultParams = {};
       Object.entries(selectedModel.parameters).forEach(([key, param]) => {
-        defaultParams[key] = param.default;
+        // 特殊处理hidden_layer_sizes参数
+        if (key === 'hidden_layer_sizes' && Array.isArray(param.default)) {
+          defaultParams[key] = param.default.map(String);
+        } else {
+          defaultParams[key] = param.default;
+        }
       });
       form.setFieldsValue({ parameters: defaultParams });
     }
@@ -115,8 +120,27 @@ const TrainModel = () => {
   // 训练模型
   const handleSubmit = async (values) => {
     try {
+      // 处理特殊参数
+      const processedValues = {...values};
+      
+      // 确保hidden_layer_sizes是数字数组
+      if (values.parameters && values.parameters.hidden_layer_sizes) {
+        const hiddenLayers = values.parameters.hidden_layer_sizes;
+        if (Array.isArray(hiddenLayers)) {
+          // 如果是数组，确保所有元素都是数字
+          processedValues.parameters.hidden_layer_sizes = hiddenLayers.map(layer => {
+            const num = parseInt(layer, 10);
+            return isNaN(num) ? 100 : num; // 如果转换失败，使用默认值100
+          });
+        } else if (typeof hiddenLayers === 'string') {
+          // 如果是单个字符串，尝试转换为数字
+          const num = parseInt(hiddenLayers, 10);
+          processedValues.parameters.hidden_layer_sizes = [isNaN(num) ? 100 : num];
+        }
+      }
+      
       setTraining(true);
-      const response = await modelApi.trainModel(values);
+      const response = await modelApi.trainModel(processedValues);
       message.success('模型训练成功');
       navigate(`/models/${response.data.id}`);
     } catch (error) {
