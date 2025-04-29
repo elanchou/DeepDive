@@ -19,10 +19,6 @@ from .schemas import (
     ModelInfo,
     TrainingRequest,
     PredictionRequest,
-    DatasetInfo, 
-    ModelInfo, 
-    TrainingRequest, 
-    PredictionRequest, 
     EvaluationResult
 )
 
@@ -150,12 +146,15 @@ def get_dataset_details(dataset_id: str):
 @app.get("/models/available", response_model=List[Dict[str, Any]])
 def list_available_models():
     """获取所有可用的模型类型"""
-    return [
-        {"id": model_id, "name": model_info["name"], "description": model_info["description"],
-        {"id": model_id, "name": model_info["name"], "description": model_info["description"], 
-         "parameters": model_info["parameters"]}
-        for model_id, model_info in model_registry.items()
-    ]
+    result = []
+    for model_id, model_info in model_registry.items():
+        result.append({
+                "id": model_id,
+            "name": model_info["name"],
+            "description": model_info["description"],
+            "parameters": model_info["parameters"]
+        })
+    return result
 
 @app.post("/models/train", response_model=ModelInfo)
 def train_new_model(request: TrainingRequest):
@@ -419,7 +418,5 @@ def predict_with_model_endpoint(model_id: str, request: PredictionRequest):
         raise HTTPException(status_code=404, detail=f"模型 {model_id} 不存在")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"预测失败: {str(e)}")
-
-if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
